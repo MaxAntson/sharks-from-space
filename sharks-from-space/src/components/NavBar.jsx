@@ -31,12 +31,23 @@ export default function NavBar() {
           </svg>
           <strong>Sharks from Space</strong>
         </Link>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 14 }}>
+
+        {/* ✅ Mobile-friendly flex wrap */}
+        <div
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 14,
+            justifyContent: "flex-end",
+          }}
+        >
           {[
             ["Home", "/"],
             ["Species", "/species"],
             ["Map", "/map"],
             ["Data", "/data"],
+            ["Blog", "/blog"],
             ["About", "/about"],
             ["Contact", "/contact"],
           ].map(([label, to]) => (
@@ -45,6 +56,8 @@ export default function NavBar() {
               to={to}
               style={({ isActive }) => ({
                 color: isActive ? "#32d0ff" : "#9fb3c8",
+                textDecoration: "none",
+                transition: "color 0.2s",
               })}
             >
               {label}
