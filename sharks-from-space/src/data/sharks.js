@@ -1,0 +1,76 @@
+export const SHARKS = [
+  {
+    key: "scalloped",
+    common: "Scalloped hammerhead",
+    scientific: "Sphyrna lewini",
+    status: "Critically Endangered",
+    datapoints: 28000,
+    recommended: true,
+  },
+  {
+    key: "bonnethead",
+    common: "Bonnethead",
+    scientific: "Sphyrna tiburo",
+    status: "Endangered",
+    datapoints: 20000,
+    recommended: true,
+  },
+
+  // Others
+  {
+    key: "great",
+    common: "Great hammerhead",
+    scientific: "Sphyrna mokarran",
+    status: "Critically Endangered",
+    datapoints: 27000,
+  },
+  {
+    key: "winghead",
+    common: "Winghead shark",
+    scientific: "Eusphyra blochii",
+    status: "Endangered",
+    datapoints: 505,
+  },
+  {
+    key: "smalleye",
+    common: "Smalleye hammerhead",
+    scientific: "Sphyrna tudes",
+    status: "Critically Endangered",
+    datapoints: 80,
+  },
+  {
+    key: "smooth",
+    common: "Smooth hammerhead",
+    scientific: "Sphyrna zygaena",
+    status: "Vulnerable",
+    datapoints: 2000,
+  },
+  {
+    key: "scalloped_bonnethead",
+    common: "Scalloped bonnethead",
+    scientific: "Sphyrna corona",
+    status: "Critically Endangered",
+    datapoints: 72,
+  },
+  {
+    key: "whitefin",
+    common: "Whitefin hammerhead",
+    scientific: "Sphyrna couardi",
+    status: "No population data",
+    datapoints: null,
+  },
+  {
+    key: "roundhead",
+    common: "Roundhead shark",
+    scientific: "Sphyrna media",
+    status: "Critically Endangered",
+    datapoints: null,
+  },
+  {
+    key: "carolina",
+    common: "Carolina hammerhead",
+    scientific: "Sphyrna gilberti",
+    status: "Data Deficient",
+    datapoints: 4,
+  },
+];

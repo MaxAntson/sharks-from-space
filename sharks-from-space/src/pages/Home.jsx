@@ -1,6 +1,16 @@
+import { Helmet } from "react-helmet-async";
+
 export default function Home() {
   return (
     <div className="section">
+      <Helmet>
+        <title>Sharks from Space 🌍🦈</title>
+        <meta
+          name="description"
+          content="Maps, species intelligence and conservation stories powered by satellites and open data."
+        />
+      </Helmet>
+
       <div className="hero">
         <div>
           <div className="badge">Open Ocean • Satellite Data</div>

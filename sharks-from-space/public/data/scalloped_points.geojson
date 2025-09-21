@@ -1,0 +1,46 @@
+{
+  "type": "FeatureCollection",
+  "name": "scalloped_points_demo",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-82.5, 9.8] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-78.1, 12.3] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-74.0, 5.2] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-100.2, 18.5] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-114.3, -12.1] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-88.4, -3.7] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-86.1, 23.7] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "species": "Scalloped hammerhead" },
+      "geometry": { "type": "Point", "coordinates": [-72.9, 0.8] }
+    }
+  ]
+}
