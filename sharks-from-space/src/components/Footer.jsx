@@ -1,7 +1,13 @@
 export default function Footer() {
   return (
     <footer
-      style={{ borderTop: "1px solid #15202b", marginTop: 32, padding: "20px" }}
+      style={{
+        /* ❌ sin marginTop para evitar el “hueco blanco” */
+        width: "100%",
+        background: "linear-gradient(to right, #0b0f14, #111a24)",
+        borderTop: "1px solid #15202b",
+        padding: "20px 0",
+      }}
     >
       <div
         style={{
@@ -9,27 +15,17 @@ export default function Footer() {
           margin: "0 auto",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          flexWrap: "wrap",
           gap: 10,
           color: "#9fb3c8",
-          flexWrap: "wrap",
+          fontSize: 14,
+          padding: "0 20px",
         }}
       >
         <span>© {new Date().getFullYear()} Sharks from Space</span>
-        <nav style={{ display: "flex", gap: 16 }}>
-          <a href="/about" style={{ color: "#9fb3c8", textDecoration: "none" }}>
-            About
-          </a>
-          <a
-            href="/contact"
-            style={{ color: "#9fb3c8", textDecoration: "none" }}
-          >
-            Contact
-          </a>
-          <a href="/data" style={{ color: "#9fb3c8", textDecoration: "none" }}>
-            Data
-          </a>
-        </nav>
+        <span>
+          🌊 Data from satellites • open datasets • conservation for our oceans
+        </span>
       </div>
     </footer>
   );
