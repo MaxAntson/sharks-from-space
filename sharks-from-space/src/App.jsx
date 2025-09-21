@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async"; // ✅ Import Helmet
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -9,10 +10,18 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import "./App.css";
 
-
 export default function App() {
   return (
     <BrowserRouter>
+      {/* ✅ Default Helmet (used if a page doesn’t override it) */}
+      <Helmet>
+        <title>Sharks from Space 🌍</title>
+        <meta
+          name="description"
+          content="Tracking sharks from space using satellites, open ocean datasets, and conservation insights."
+        />
+      </Helmet>
+
       <NavBar />
       <main className="page">
         <Routes>
@@ -29,4 +38,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

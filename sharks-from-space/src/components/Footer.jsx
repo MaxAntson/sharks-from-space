@@ -9,12 +9,27 @@ export default function Footer() {
           margin: "0 auto",
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           gap: 10,
           color: "#9fb3c8",
+          flexWrap: "wrap",
         }}
       >
         <span>© {new Date().getFullYear()} Sharks from Space</span>
-        <span>Data: satellites, open datasets, conservation</span>
+        <nav style={{ display: "flex", gap: 16 }}>
+          <a href="/about" style={{ color: "#9fb3c8", textDecoration: "none" }}>
+            About
+          </a>
+          <a
+            href="/contact"
+            style={{ color: "#9fb3c8", textDecoration: "none" }}
+          >
+            Contact
+          </a>
+          <a href="/data" style={{ color: "#9fb3c8", textDecoration: "none" }}>
+            Data
+          </a>
+        </nav>
       </div>
     </footer>
   );

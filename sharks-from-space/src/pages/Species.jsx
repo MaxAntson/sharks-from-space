@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async"; // ✅ SEO
 import { SHARKS } from "../data/sharks.js";
 
 const STATUS_ORDER = [
@@ -94,6 +95,15 @@ export default function Species() {
 
   return (
     <div className="section">
+      {/* ✅ Helmet: SEO por página */}
+      <Helmet>
+        <title>Sharks from Space – Species</title>
+        <meta
+          name="description"
+          content="Browse hammerhead shark species with conservation status and datapoints. Filter, sort and export CSV of the current list."
+        />
+      </Helmet>
+
       <h2 className="h2">Hammerhead shark species (10)</h2>
 
       {/* Controls */}

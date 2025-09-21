@@ -1,12 +1,44 @@
 import { useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { SHARKS } from "../data/sharks.js";
 
 const formatNum = (n) =>
   typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
 
+// CSV helper (exporta las filas visibles, en el orden actual)
+function exportCSV(rows, filename = "sharks_datasets.csv") {
+  const head = ["key", "common", "scientific", "status", "datapoints"];
+  const escape = (v) => `"${String(v ?? "").replaceAll(`"`, `""`)}"`;
+  const data = rows.map((r) =>
+    [r.key, r.common, r.scientific, r.status, r.datapoints ?? ""]
+      .map(escape)
+      .join(",")
+  );
+  const csv = [head.join(","), ...data].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 export default function Data() {
   const [sortBy, setSortBy] = useState("datapoints");
   const [dir, setDir] = useState("desc");
+
+  // KPIs resumen
+  const { totalSpecies, withData, totalDatapoints } = useMemo(() => {
+    const total = SHARKS.length;
+    const withD = SHARKS.filter(
+      (s) => typeof s.datapoints === "number" && s.datapoints > 0
+    ).length;
+    const sum = SHARKS.reduce(
+      (acc, s) => acc + (typeof s.datapoints === "number" ? s.datapoints : 0),
+      0
+    );
+    return { totalSpecies: total, withData: withD, totalDatapoints: sum };
+  }, []);
 
   const max = useMemo(
     () =>
@@ -51,8 +83,62 @@ export default function Data() {
 
   return (
     <div className="section">
-      <h2 className="h2">Datasets overview</h2>
+      {/* ✅ Helmet para SEO */}
+      <Helmet>
+        <title>Sharks from Space – Data Explorer</title>
+        <meta
+          name="description"
+          content="Explore and download shark datasets. Sortable table with per-species datapoints and quick CSV export."
+        />
+      </Helmet>
 
+      <h2 className="h2" style={{ marginBottom: 12 }}>
+        Datasets overview
+      </h2>
+
+      {/* Resumen + Export */}
+      <div
+        className="card"
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div className="kpi">
+            {formatNum(totalSpecies)}
+            <div className="muted" style={{ fontSize: 12 }}>
+              species
+            </div>
+          </div>
+          <div className="kpi">
+            {formatNum(withData)}
+            <div className="muted" style={{ fontSize: 12 }}>
+              with datapoints
+            </div>
+          </div>
+          <div className="kpi">
+            {formatNum(totalDatapoints)}
+            <div className="muted" style={{ fontSize: 12 }}>
+              total datapoints
+            </div>
+          </div>
+        </div>
+
+        <button
+          className="btn"
+          onClick={() => exportCSV(rows, "sharks_datasets_sorted.csv")}
+          title="Export current table as CSV"
+        >
+          ⬇ Export CSV
+        </button>
+      </div>
+
+      {/* Tabla */}
       <div className="card" style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -110,7 +196,7 @@ export default function Data() {
       </div>
 
       <p className="muted" style={{ marginTop: 8 }}>
-        Click headers to sort. “Share” shows the proportion vs the max
+        Click headers to sort. “Share” shows the proportion vs the maximum
         datapoints across species.
       </p>
     </div>
