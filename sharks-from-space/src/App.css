@@ -1,0 +1,19 @@
+:root { --bg:#0b0f14; --card:#121821; --muted:#9fb3c8; --acc:#32d0ff; }
+html, body, #root { height:100%; background:var(--bg); color:#eaf2fb; }
+*{box-sizing:border-box}
+a{color:var(--acc); text-decoration:none}
+.page{max-width:1100px; margin:0 auto; padding:96px 20px 48px}
+.section{margin:32px 0}
+.card{background:var(--card); border:1px solid #1f2b3a; border-radius:16px; padding:20px}
+.grid{display:grid; gap:16px}
+@media (min-width: 900px){ .grid.cols-3{grid-template-columns:repeat(3,1fr)} .grid.cols-2{grid-template-columns:repeat(2,1fr)} }
+.btn{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:1px solid #2b3a4f; background:#15202b; color:#eaf2fb}
+.btn:hover{background:#192634}
+.h1{font-size:clamp(28px,4vw,44px); margin:0 0 8px}
+.h2{font-size:clamp(20px,3vw,28px); color:#bfe8ff; margin:0 0 10px}
+.muted{color:var(--muted)}
+.hero{display:grid; gap:20px; align-items:center}
+@media (min-width: 950px){ .hero{grid-template-columns:1.2fr 1fr} }
+.hero img{width:100%; border-radius:16px; border:1px solid #1f2b3a}
+.badge{font-size:12px; padding:4px 8px; background:#102331; border:1px solid #2a4157; color:#9fd7ff; border-radius:999px}
+.kpi{font-size:28px}
