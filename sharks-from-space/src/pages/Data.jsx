@@ -1,73 +1,106 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { SHARKS } from "../data/sharks.js";
 
-const formatNum = (n) =>
-  typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
-
-// CSV helper (exporta las filas visibles, en el orden actual)
-function exportCSV(rows, filename = "sharks_datasets.csv") {
-  const head = ["key", "common", "scientific", "status", "datapoints"];
-  const escape = (v) => `"${String(v ?? "").replaceAll(`"`, `""`)}"`;
-  const data = rows.map((r) =>
-    [r.key, r.common, r.scientific, r.status, r.datapoints ?? ""]
-      .map(escape)
-      .join(",")
-  );
-  const csv = [head.join(","), ...data].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+/** Small helper to fetch a GeoJSON and return its feature count.
+ *  - If the file no existe (404) o hay error → devuelve null (no rompe la página)
+ */
+async function fetchGeoCount(url) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const gj = await res.json();
+    const feats = Array.isArray(gj?.features) ? gj.features : [];
+    return feats.length;
+  } catch {
+    return null;
+  }
 }
 
+/** Hook: recibe lista de "datasets" con {key, label, scientific, status, url}
+ *  y rellena counts de forma asíncrona.
+ */
+function useCounts(datasets) {
+  const [rows, setRows] = useState(
+    datasets.map((d) => ({ ...d, datapoints: null }))
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next = [];
+      for (const d of datasets) {
+        const c = d.url ? await fetchGeoCount(d.url) : null;
+        next.push({ ...d, datapoints: typeof c === "number" ? c : null });
+      }
+      if (!cancelled) setRows(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [datasets]);
+
+  return rows;
+}
+
+const fmt = (n) =>
+  typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
+
 export default function Data() {
-  const [sortBy, setSortBy] = useState("datapoints");
-  const [dir, setDir] = useState("desc");
-
-  // KPIs resumen
-  const { totalSpecies, withData, totalDatapoints } = useMemo(() => {
-    const total = SHARKS.length;
-    const withD = SHARKS.filter(
-      (s) => typeof s.datapoints === "number" && s.datapoints > 0
-    ).length;
-    const sum = SHARKS.reduce(
-      (acc, s) => acc + (typeof s.datapoints === "number" ? s.datapoints : 0),
-      0
-    );
-    return { totalSpecies: total, withData: withD, totalDatapoints: sum };
-  }, []);
-
-  const max = useMemo(
-    () =>
-      Math.max(
-        ...SHARKS.map((s) =>
-          typeof s.datapoints === "number" ? s.datapoints : 0
-        )
-      ),
+  // 👇 Define aquí tus datasets reales (cambia/añade rutas si quieres)
+  const datasets = useMemo(
+    () => [
+      {
+        key: "lewini",
+        label: "Scalloped hammerhead",
+        scientific: "Sphyrna lewini",
+        status: "Critically Endangered",
+        url: "/data/scalloped_points.geojson", // ✅ ya lo tienes generado desde GBIF
+      },
+      {
+        key: "bonnet",
+        label: "Bonnethead",
+        scientific: "Sphyrna tiburo",
+        status: "Endangered",
+        url: "/data/bonnethead_points.geojson", // si no existe, mostrará "—"
+      },
+      {
+        key: "sphyrna_all",
+        label: "All hammerheads (Sphyrna spp.)",
+        scientific: "Sphyrna spp.",
+        status: "Mixed",
+        url: "/data/sphyrna_points.geojson", // opcional (si más tarde haces uno agregado)
+      },
+    ],
     []
   );
 
-  const rows = useMemo(() => {
-    const list = [...SHARKS];
-    const mult = dir === "asc" ? 1 : -1;
+  const rows = useCounts(datasets);
 
-    list.sort((a, b) => {
+  // orden + dirección
+  const [sortBy, setSortBy] = useState("datapoints");
+  const [dir, setDir] = useState("desc");
+
+  const sorted = useMemo(() => {
+    const mult = dir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
       if (sortBy === "datapoints") {
         const av = typeof a.datapoints === "number" ? a.datapoints : -1;
         const bv = typeof b.datapoints === "number" ? b.datapoints : -1;
         return (av - bv) * mult;
       }
-      if (sortBy === "name") return a.common.localeCompare(b.common) * mult;
       if (sortBy === "status") return a.status.localeCompare(b.status) * mult;
-      return 0;
+      return a.label.localeCompare(b.label) * mult;
     });
-    return list;
-  }, [sortBy, dir]);
+  }, [rows, sortBy, dir]);
 
-  const th = (key, label) => (
+  const max = useMemo(() => {
+    const nums = rows.map((r) =>
+      typeof r.datapoints === "number" ? r.datapoints : 0
+    );
+    return nums.length ? Math.max(...nums) : 0;
+  }, [rows]);
+
+  const Th = (key, label) => (
     <th
       onClick={() =>
         sortBy === key
@@ -83,87 +116,42 @@ export default function Data() {
 
   return (
     <div className="section">
-      {/* ✅ Helmet para SEO */}
       <Helmet>
-        <title>Sharks from Space – Data Explorer</title>
+        <title>Sharks from Space – Data</title>
         <meta
           name="description"
-          content="Explore and download shark datasets. Sortable table with per-species datapoints and quick CSV export."
+          content="Live dataset overview built from real GeoJSON sightings: counts by species and share vs max."
         />
       </Helmet>
 
-      <h2 className="h2" style={{ marginBottom: 12 }}>
-        Datasets overview
-      </h2>
+      <h2 className="h2">Datasets overview (live)</h2>
 
-      {/* Resumen + Export */}
-      <div
-        className="card"
-        style={{
-          display: "flex",
-          gap: 16,
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <div className="kpi">
-            {formatNum(totalSpecies)}
-            <div className="muted" style={{ fontSize: 12 }}>
-              species
-            </div>
-          </div>
-          <div className="kpi">
-            {formatNum(withData)}
-            <div className="muted" style={{ fontSize: 12 }}>
-              with datapoints
-            </div>
-          </div>
-          <div className="kpi">
-            {formatNum(totalDatapoints)}
-            <div className="muted" style={{ fontSize: 12 }}>
-              total datapoints
-            </div>
-          </div>
-        </div>
-
-        <button
-          className="btn"
-          onClick={() => exportCSV(rows, "sharks_datasets_sorted.csv")}
-          title="Export current table as CSV"
-        >
-          ⬇ Export CSV
-        </button>
-      </div>
-
-      {/* Tabla */}
       <div className="card" style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left" }}>
-              {th("name", "Species")}
-              {th("status", "Status")}
-              {th("datapoints", "Datapoints")}
+              {Th("name", "Species")}
+              {Th("status", "Status")}
+              {Th("datapoints", "Datapoints")}
               <th>Share</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((s) => {
-              const pct = max ? Math.max(0, (s.datapoints ?? 0) / max) : 0;
+            {sorted.map((r) => {
+              const pct =
+                max && typeof r.datapoints === "number"
+                  ? Math.max(0, r.datapoints / max)
+                  : 0;
               return (
-                <tr key={s.key} style={{ borderTop: "1px solid #1f2b3a" }}>
+                <tr key={r.key} style={{ borderTop: "1px solid #1f2b3a" }}>
                   <td style={{ padding: "10px 8px" }}>
-                    <strong>{s.common}</strong>
+                    <strong>{r.label}</strong>
                     <div className="muted" style={{ fontSize: 12 }}>
-                      {s.scientific}
+                      {r.scientific}
                     </div>
                   </td>
-                  <td style={{ padding: "10px 8px" }}>{s.status}</td>
-                  <td style={{ padding: "10px 8px" }}>
-                    {formatNum(s.datapoints)}
-                  </td>
+                  <td style={{ padding: "10px 8px" }}>{r.status}</td>
+                  <td style={{ padding: "10px 8px" }}>{fmt(r.datapoints)}</td>
                   <td style={{ padding: "10px 8px", width: 220 }}>
                     {/* tiny bar (SVG) */}
                     <svg
@@ -196,8 +184,8 @@ export default function Data() {
       </div>
 
       <p className="muted" style={{ marginTop: 8 }}>
-        Click headers to sort. “Share” shows the proportion vs the maximum
-        datapoints across species.
+        Counts are read directly from your GeoJSON files. Update the files and
+        this page updates automatically.
       </p>
     </div>
   );
