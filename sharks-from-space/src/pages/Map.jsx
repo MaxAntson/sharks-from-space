@@ -13,22 +13,11 @@ import { Helmet } from "react-helmet-async";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 
-// Paleta por especie (puedes ajustar colores aquí)
-const COLORS = {
-  lewini: "#32d0ff", // Scalloped hammerhead
-  tiburo: "#ffd166", // Bonnethead
-  mokarran: "#7dd3fc", // Great hammerhead
-  zygaena: "#60a5fa", // Smooth hammerhead
-  corona: "#9ae6b4", // Scalloped bonnethead (si aparece)
-  default: "#34d399", // fallback
-};
-
-// --- Loader genérico de GeoJSON desde /public
+// ============ util & hooks que NO usan contexto de leaflet ============
 function useGeoJson(url) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -44,11 +33,74 @@ function useGeoJson(url) {
       cancelled = true;
     };
   }, [url]);
-
   return { data, err, loading };
 }
 
-// --- Ajusta el viewport al conjunto visible
+function filterSeaPoints(fc, land) {
+  if (!fc || !land) return fc;
+  const landFeatures = land.features || [];
+  const seaFeatures = (fc.features || []).filter((f) => {
+    const coords = f?.geometry?.coordinates;
+    if (!coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]))
+      return false;
+    const pt = point([coords[0], coords[1]]);
+    const onLand = landFeatures.some((poly) => booleanPointInPolygon(pt, poly));
+    return !onLand;
+  });
+  return { ...fc, features: seaFeatures };
+}
+
+const COLORS = {
+  lewini: "#32d0ff",
+  tiburo: "#ffd166",
+  mokarran: "#7dd3fc",
+  zygaena: "#60a5fa",
+  corona: "#9ae6b4",
+  default: "#34d399",
+};
+
+function colorForFeature(feature) {
+  const s = (
+    feature?.properties?.species ||
+    feature?.properties?.scientificName ||
+    ""
+  ).toLowerCase();
+  if (s.includes("lewini")) return COLORS.lewini;
+  if (s.includes("tiburo")) return COLORS.tiburo;
+  if (s.includes("mokarran")) return COLORS.mokarran;
+  if (s.includes("zygaena")) return COLORS.zygaena;
+  if (s.includes("corona")) return COLORS.corona;
+  return COLORS.default;
+}
+
+const pointToLayer = (feature, latlng) =>
+  L.circleMarker(latlng, {
+    radius: 3,
+    color: colorForFeature(feature),
+    fillColor: colorForFeature(feature),
+    fillOpacity: 0.75,
+    weight: 0.8,
+  });
+
+const onEachFeature = (feature, layer) => {
+  const species =
+    feature?.properties?.species ||
+    feature?.properties?.scientificName ||
+    "Shark";
+  const [lng, lat] = feature?.geometry?.coordinates || [];
+  const src =
+    feature?.properties?.datasetName || feature?.properties?.publisher || "";
+  layer.bindPopup(
+    `<strong>${species}</strong><br/>lat: ${lat?.toFixed(
+      3
+    )}, lng: ${lng?.toFixed(3)}${
+      src ? `<br/><span class="muted">${src}</span>` : ""
+    }`
+  );
+};
+
+// ============ componentes que SÍ usan contexto de leaflet ============
+// Deben renderizarse DENTRO de <MapContainer>
 function FitToData({ featureCollection }) {
   const map = useMap();
   useEffect(() => {
@@ -56,12 +108,10 @@ function FitToData({ featureCollection }) {
     const coords = featureCollection.features
       .map((f) => f.geometry?.coordinates)
       .filter(Boolean);
-
     const pts = [];
     const push = (lng, lat) => {
       if (Number.isFinite(lng) && Number.isFinite(lat)) pts.push([lat, lng]);
     };
-
     for (const c of coords) {
       if (Array.isArray(c[0]) && Array.isArray(c[0][0])) {
         for (const p of c) push(p[0], p[1]);
@@ -70,7 +120,6 @@ function FitToData({ featureCollection }) {
       }
     }
     if (!pts.length) return;
-
     const lats = pts.map((p) => p[0]);
     const lngs = pts.map((p) => p[1]);
     const bounds = [
@@ -82,75 +131,28 @@ function FitToData({ featureCollection }) {
   return null;
 }
 
-export default function Map() {
-  // ✅ Nuevo dataset: todas las especies de Sphyrna desde GBIF
-  const hammerheads = useGeoJson("/data/sphyrna_points.geojson");
+// =============================== PAGE ===============================
+function LegendDot({ color, label }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span
+        style={{ width: 12, height: 12, background: color, borderRadius: 999 }}
+      />
+      {label}
+    </span>
+  );
+}
 
-  // Máscara de tierra
+export default function Map() {
+  const hammerheads = useGeoJson("/data/sphyrna_points.geojson");
   const land = useGeoJson("/data/land.geojson");
 
-  // Filtro: quita puntos en tierra
-  const filterSeaPoints = (fc) => {
-    if (!fc || !land.data) return fc;
-    const landFeatures = land.data.features || [];
-    const seaFeatures = (fc.features || []).filter((f) => {
-      const coords = f?.geometry?.coordinates;
-      if (!coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]))
-        return false;
-      const pt = point([coords[0], coords[1]]);
-      const onLand = landFeatures.some((poly) =>
-        booleanPointInPolygon(pt, poly)
-      );
-      return !onLand;
-    });
-    return { ...fc, features: seaFeatures };
-  };
-
-  // Color por especie (usamos el nombre científico en minúsculas)
-  const colorForFeature = (feature) => {
-    const s = (
-      feature?.properties?.species ||
-      feature?.properties?.scientificName ||
-      ""
-    ).toLowerCase();
-    // buscamos por epíteto específico
-    if (s.includes("lewini")) return COLORS.lewini;
-    if (s.includes("tiburo")) return COLORS.tiburo;
-    if (s.includes("mokarran")) return COLORS.mokarran;
-    if (s.includes("zygaena")) return COLORS.zygaena;
-    if (s.includes("corona")) return COLORS.corona;
-    return COLORS.default;
-  };
-
-  // Marcadores (radio pequeño por volumen de puntos)
-  const pointToLayer = (feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 3,
-      color: colorForFeature(feature),
-      fillColor: colorForFeature(feature),
-      fillOpacity: 0.75,
-      weight: 0.8,
-    });
-
-  const onEachFeature = (feature, layer) => {
-    const species =
-      feature?.properties?.species ||
-      feature?.properties?.scientificName ||
-      "Shark";
-    const [lng, lat] = feature?.geometry?.coordinates || [];
-    const src =
-      feature?.properties?.datasetName || feature?.properties?.publisher || "";
-    layer.bindPopup(
-      `<strong>${species}</strong><br/>lat: ${lat?.toFixed(
-        3
-      )}, lng: ${lng?.toFixed(3)}${
-        src ? `<br/><span class="muted">${src}</span>` : ""
-      }`
-    );
-  };
-
+  // preparar datos filtrados (sin usar hooks de leaflet)
   const filteredAll = useMemo(
-    () => (hammerheads.data ? filterSeaPoints(hammerheads.data) : null),
+    () =>
+      hammerheads.data && land.data
+        ? filterSeaPoints(hammerheads.data, land.data)
+        : hammerheads.data || null,
     [hammerheads.data, land.data]
   );
 
@@ -181,6 +183,7 @@ export default function Map() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
+          {/* ✅ Este componente usa useMap y por eso va DENTRO */}
           {filteredAll && <FitToData featureCollection={filteredAll} />}
 
           <LayersControl position="topright">
@@ -223,25 +226,8 @@ export default function Map() {
 
       <p className="muted" style={{ marginTop: 4 }}>
         Points falling on land are filtered out using a global land mask
-        (GeoJSON) and Turf. Data source: GBIF occurrences (2000–2025), genus{" "}
-        <em>Sphyrna</em>.
+        (GeoJSON) and Turf. Data: GBIF (2000–2025), genus <em>Sphyrna</em>.
       </p>
     </div>
-  );
-}
-
-function LegendDot({ color, label }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <span
-        style={{
-          width: 12,
-          height: 12,
-          background: color,
-          borderRadius: 999,
-        }}
-      />
-      {label}
-    </span>
   );
 }
