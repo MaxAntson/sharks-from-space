@@ -10,6 +10,7 @@ import Data from "./pages/Data";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
+import PostDetail from "./pages/PostDetail";
 import BlogPost from "./pages/BlogPost";
 import Research from "./pages/Research";
 import Sources from "./pages/Sources";
@@ -32,6 +33,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<PostDetail />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/species" element={<Species />} />
           <Route path="/species/:key" element={<SpeciesDetail />} />

@@ -188,7 +188,11 @@ export default function Species() {
                   marginBottom: 8,
                 }}
               >
-                <strong style={{ fontSize: 18 }}>{sp.common}</strong>
+                <strong style={{ fontSize: 18 }}>
+                  <Link to={`/species/${sp.key}`} style={{ color: "inherit" }}>
+                    {sp.common}
+                  </Link>
+                </strong>
                 {sp.recommended && <span className="badge">Recommended</span>}
               </div>
               <div
