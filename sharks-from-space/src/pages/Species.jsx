@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async"; // ✅ SEO
+import { Helmet } from "react-helmet-async";
 import { SHARKS } from "../data/sharks.js";
 
 const STATUS_ORDER = [
@@ -22,8 +22,8 @@ const statusColor = (status) => {
 const formatNum = (n) =>
   typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
 
-// 🔽 CSV helper
-function exportCSV(rows, filename = "sharks.csv") {
+// CSV export of the current filtered list
+function exportCSV(rows, filename = "sharks_filtered.csv") {
   const head = [
     "key",
     "common",
@@ -63,7 +63,6 @@ export default function Species() {
 
   const filtered = useMemo(() => {
     const qn = q.trim().toLowerCase();
-
     let list = SHARKS.filter((sp) => {
       const matchesQuery =
         !qn ||
@@ -95,13 +94,14 @@ export default function Species() {
 
   return (
     <div className="section">
-      {/* ✅ Helmet: SEO por página */}
+      {/* SEO per-page */}
       <Helmet>
         <title>Sharks from Space – Species</title>
         <meta
           name="description"
-          content="Browse hammerhead shark species with conservation status and datapoints. Filter, sort and export CSV of the current list."
+          content="Browse hammerhead shark species with conservation status and datapoints. Filter, sort, and export the current list to CSV."
         />
+        <link rel="canonical" href="https://sharksfrom.space/species" />
       </Helmet>
 
       <h2 className="h2">Hammerhead shark species (10)</h2>
@@ -123,6 +123,7 @@ export default function Species() {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             style={selectStyle}
+            aria-label="Filter by status"
           >
             <option value="all">All statuses</option>
             {STATUS_ORDER.map((s) => (
@@ -135,6 +136,7 @@ export default function Species() {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={selectStyle}
+            aria-label="Sort by"
           >
             <option value="datapoints">Sort: datapoints</option>
             <option value="name">Sort: name</option>
@@ -143,14 +145,16 @@ export default function Species() {
           <button
             className="btn"
             onClick={() => setDir((d) => (d === "asc" ? "desc" : "asc"))}
+            aria-label="Toggle sort direction"
           >
             {dir === "asc" ? "↑ Asc" : "↓ Desc"}
           </button>
 
-          {/* ✅ Export CSV of current filtered list */}
+          {/* Export CSV of the current filtered list */}
           <button
             className="btn"
-            onClick={() => exportCSV(filtered, "sharks_filtered.csv")}
+            onClick={() => exportCSV(filtered)}
+            aria-label="Export filtered list as CSV"
           >
             ⬇ Export CSV
           </button>

@@ -70,11 +70,24 @@ export default function Home() {
               Species profiles, threats, and conservation context.
             </p>
           </div>
+
           <div className="card">
             <strong>Act</strong>
             <p className="muted">
               Share insights for NGOs, educators and the public.
             </p>
+          </div>
+          <div className="section">
+            <h2 className="h2">Reference model</h2>
+            <div className="card">
+              <strong>White shark in the Mediterranean (paper summary)</strong>
+              <p className="muted">
+                A Bayesian LGCP with barrier effects and observation effort
+                (AIS+SAR, EMODnet) highlights coastal hotspots and the
+                importance of depth and temperature range. We’ll mirror parts of
+                this approach for hammerheads.
+              </p>
+            </div>
           </div>
         </div>
       </div>

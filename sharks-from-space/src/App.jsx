@@ -10,6 +10,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import Research from "./pages/Research";
 import "./App.css";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/species" element={<Species />} />
+          <Route path="/research" element={<Research />} />
           <Route path="/map" element={<Map />} />
           <Route path="/data" element={<Data />} />
           <Route path="/about" element={<About />} />

@@ -47,6 +47,7 @@ export default function NavBar() {
             ["Species", "/species"],
             ["Map", "/map"],
             ["Data", "/data"],
+            ["Research", "/research"],
             ["Blog", "/blog"],
             ["About", "/about"],
             ["Contact", "/contact"],
