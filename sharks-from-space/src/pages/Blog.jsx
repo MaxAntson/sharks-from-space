@@ -41,7 +41,7 @@ export default function Blog() {
         </div>
         <div
           style={{
-            backgroundImage: "url(/blog/covers/placeholder.jpg)",
+            backgroundImage: "url(/blog/covers/satelite.jpeg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -65,7 +65,7 @@ export default function Blog() {
             >
               <img
                 className="blog-card__cover"
-                src={p.cover || "/blog/covers/placeholder.jpg"}
+                src={p.cover || "/blog/covers/satelite.jpeg"}
                 alt={p.title}
                 loading="lazy"
               />
