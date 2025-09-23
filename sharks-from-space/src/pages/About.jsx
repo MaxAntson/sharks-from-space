@@ -57,6 +57,11 @@ export default function About() {
           science, or space-enabled conservation. Together, we can amplify the
           impact of open science for our oceans.
         </p>
+        <p className="muted" style={{ fontSize: 12 }}>
+          Sources: GBIF, OCEARCH, Copernicus, Global Fishing Watch (AIS+SAR),
+          EMODnet. Methods inspired by recent literature on SSF and Bayesian
+          LGCP with barriers.
+        </p>
       </div>
     </div>
   );

@@ -13,16 +13,11 @@ import { Helmet } from "react-helmet-async";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 
-// Colors per species
-const colorScalloped = "#32d0ff";
-const colorBonnethead = "#ffd166";
-
-// Generic hook to load GeoJSON from /public
+// ============ util & hooks que NO usan contexto de leaflet ============
 function useGeoJson(url) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -38,11 +33,74 @@ function useGeoJson(url) {
       cancelled = true;
     };
   }, [url]);
-
   return { data, err, loading };
 }
 
-// Fit the map viewport to a FeatureCollection of points
+function filterSeaPoints(fc, land) {
+  if (!fc || !land) return fc;
+  const landFeatures = land.features || [];
+  const seaFeatures = (fc.features || []).filter((f) => {
+    const coords = f?.geometry?.coordinates;
+    if (!coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]))
+      return false;
+    const pt = point([coords[0], coords[1]]);
+    const onLand = landFeatures.some((poly) => booleanPointInPolygon(pt, poly));
+    return !onLand;
+  });
+  return { ...fc, features: seaFeatures };
+}
+
+const COLORS = {
+  lewini: "#32d0ff",
+  tiburo: "#ffd166",
+  mokarran: "#7dd3fc",
+  zygaena: "#60a5fa",
+  corona: "#9ae6b4",
+  default: "#34d399",
+};
+
+function colorForFeature(feature) {
+  const s = (
+    feature?.properties?.species ||
+    feature?.properties?.scientificName ||
+    ""
+  ).toLowerCase();
+  if (s.includes("lewini")) return COLORS.lewini;
+  if (s.includes("tiburo")) return COLORS.tiburo;
+  if (s.includes("mokarran")) return COLORS.mokarran;
+  if (s.includes("zygaena")) return COLORS.zygaena;
+  if (s.includes("corona")) return COLORS.corona;
+  return COLORS.default;
+}
+
+const pointToLayer = (feature, latlng) =>
+  L.circleMarker(latlng, {
+    radius: 3,
+    color: colorForFeature(feature),
+    fillColor: colorForFeature(feature),
+    fillOpacity: 0.75,
+    weight: 0.8,
+  });
+
+const onEachFeature = (feature, layer) => {
+  const species =
+    feature?.properties?.species ||
+    feature?.properties?.scientificName ||
+    "Shark";
+  const [lng, lat] = feature?.geometry?.coordinates || [];
+  const src =
+    feature?.properties?.datasetName || feature?.properties?.publisher || "";
+  layer.bindPopup(
+    `<strong>${species}</strong><br/>lat: ${lat?.toFixed(
+      3
+    )}, lng: ${lng?.toFixed(3)}${
+      src ? `<br/><span class="muted">${src}</span>` : ""
+    }`
+  );
+};
+
+// ============ componentes que SÍ usan contexto de leaflet ============
+// Deben renderizarse DENTRO de <MapContainer>
 function FitToData({ featureCollection }) {
   const map = useMap();
   useEffect(() => {
@@ -50,24 +108,18 @@ function FitToData({ featureCollection }) {
     const coords = featureCollection.features
       .map((f) => f.geometry?.coordinates)
       .filter(Boolean);
-    if (!coords.length) return;
-
     const pts = [];
     const push = (lng, lat) => {
       if (Number.isFinite(lng) && Number.isFinite(lat)) pts.push([lat, lng]);
     };
-
     for (const c of coords) {
       if (Array.isArray(c[0]) && Array.isArray(c[0][0])) {
-        // MultiPoint, etc.
         for (const p of c) push(p[0], p[1]);
       } else {
-        // Point
         push(c[0], c[1]);
       }
     }
     if (!pts.length) return;
-
     const lats = pts.map((p) => p[0]);
     const lngs = pts.map((p) => p[1]);
     const bounds = [
@@ -79,87 +131,41 @@ function FitToData({ featureCollection }) {
   return null;
 }
 
-export default function Map() {
-  // Load species points
-  const scalloped = useGeoJson("/data/scalloped_points.geojson");
-  const bonnet = useGeoJson("/data/bonnethead_points.geojson");
+// =============================== PAGE ===============================
+function LegendDot({ color, label }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span
+        style={{ width: 12, height: 12, background: color, borderRadius: 999 }}
+      />
+      {label}
+    </span>
+  );
+}
 
-  // Load land polygons (mask)
+export default function Map() {
+  const hammerheads = useGeoJson("/data/sphyrna_points.geojson");
   const land = useGeoJson("/data/land.geojson");
 
-  // Filter helper: remove points that fall on land
-  const filterSeaPoints = (fc) => {
-    if (!fc || !land.data) return fc; // no mask yet -> no filtering
-    const landFeatures = land.data.features || [];
-    const seaFeatures = (fc.features || []).filter((f) => {
-      const coords = f?.geometry?.coordinates;
-      if (!coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]))
-        return false;
-      const pt = point([coords[0], coords[1]]); // [lng, lat]
-      // true if point is inside ANY land polygon
-      const onLand = landFeatures.some((poly) =>
-        booleanPointInPolygon(pt, poly)
-      );
-      return !onLand;
-    });
-    return { ...fc, features: seaFeatures };
-  };
-
-  // Marker styles (valid opacity 0..1)
-  const scallopedPointToLayer = (_feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 4,
-      color: colorScalloped,
-      fillColor: colorScalloped,
-      fillOpacity: 0.75,
-      weight: 1,
-    });
-
-  const bonnetPointToLayer = (_feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 4,
-      color: "#cfa241",
-      fillColor: colorBonnethead,
-      fillOpacity: 0.75,
-      weight: 1,
-    });
-
-  // Popups
-  const onEachFeature = (feature, layer) => {
-    const species = feature?.properties?.species || "Shark";
-    const [lng, lat] = feature?.geometry?.coordinates || [];
-    layer.bindPopup(
-      `<strong>${species}</strong><br/>lat: ${lat?.toFixed(
-        3
-      )}, lng: ${lng?.toFixed(3)}`
-    );
-  };
-
-  // Loading / error states
-  const loading = scalloped.loading || bonnet.loading || land.loading;
-  const error = scalloped.err || bonnet.err || land.err;
-
-  // Choose collection to fit initially (filtered if possible)
-  const filteredScalloped = useMemo(
-    () => (scalloped.data ? filterSeaPoints(scalloped.data) : null),
-    [scalloped.data, land.data]
-  );
-  const filteredBonnet = useMemo(
-    () => (bonnet.data ? filterSeaPoints(bonnet.data) : null),
-    [bonnet.data, land.data]
+  // preparar datos filtrados (sin usar hooks de leaflet)
+  const filteredAll = useMemo(
+    () =>
+      hammerheads.data && land.data
+        ? filterSeaPoints(hammerheads.data, land.data)
+        : hammerheads.data || null,
+    [hammerheads.data, land.data]
   );
 
-  const fitCollection =
-    filteredScalloped || filteredBonnet || scalloped.data || bonnet.data;
+  const loading = hammerheads.loading || land.loading;
+  const error = hammerheads.err || land.err;
 
   return (
     <div className="section">
-      {/* ✅ Helmet for SEO */}
       <Helmet>
         <title>Sharks from Space – Global Map</title>
         <meta
           name="description"
-          content="Interactive global map of shark sightings with species layers and land-mask filtering."
+          content="Interactive global map of hammerhead shark (Sphyrna spp.) occurrences from GBIF, filtered to ocean points with a land mask."
         />
       </Helmet>
 
@@ -177,29 +183,17 @@ export default function Map() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {fitCollection && <FitToData featureCollection={fitCollection} />}
+          {/* ✅ Este componente usa useMap y por eso va DENTRO */}
+          {filteredAll && <FitToData featureCollection={filteredAll} />}
 
           <LayersControl position="topright">
-            <LayersControl.Overlay checked name="Scalloped hammerhead">
+            <LayersControl.Overlay checked name="Hammerheads (GBIF)">
               <>
-                {filteredScalloped && (
+                {filteredAll && (
                   <GeoJSON
-                    key="scalloped"
-                    data={filteredScalloped}
-                    pointToLayer={scallopedPointToLayer}
-                    onEachFeature={onEachFeature}
-                  />
-                )}
-              </>
-            </LayersControl.Overlay>
-
-            <LayersControl.Overlay checked name="Bonnethead">
-              <>
-                {filteredBonnet && (
-                  <GeoJSON
-                    key="bonnet"
-                    data={filteredBonnet}
-                    pointToLayer={bonnetPointToLayer}
+                    key="sphyrna"
+                    data={filteredAll}
+                    pointToLayer={pointToLayer}
                     onEachFeature={onEachFeature}
                   />
                 )}
@@ -224,33 +218,15 @@ export default function Map() {
         style={{ display: "flex", gap: 16, marginTop: 8, alignItems: "center" }}
       >
         <span className="muted">Legend:</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 12,
-              height: 12,
-              background: colorScalloped,
-              borderRadius: 999,
-            }}
-          />
-          Scalloped
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 12,
-              height: 12,
-              background: colorBonnethead,
-              borderRadius: 999,
-            }}
-          />
-          Bonnethead
-        </span>
+        <LegendDot color={COLORS.lewini} label="S. lewini (Scalloped)" />
+        <LegendDot color={COLORS.mokarran} label="S. mokarran (Great)" />
+        <LegendDot color={COLORS.zygaena} label="S. zygaena (Smooth)" />
+        <LegendDot color={COLORS.tiburo} label="S. tiburo (Bonnethead)" />
       </div>
 
       <p className="muted" style={{ marginTop: 4 }}>
         Points falling on land are filtered out using a global land mask
-        (GeoJSON) and Turf.
+        (GeoJSON) and Turf. Data: GBIF (2000–2025), genus <em>Sphyrna</em>.
       </p>
     </div>
   );
