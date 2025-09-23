@@ -1,191 +1,347 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 
-/** Small helper to fetch a GeoJSON and return its feature count.
- *  - If the file no existe (404) o hay error → devuelve null (no rompe la página)
- */
-async function fetchGeoCount(url) {
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    const gj = await res.json();
-    const feats = Array.isArray(gj?.features) ? gj.features : [];
-    return feats.length;
-  } catch {
-    return null;
-  }
+const formatNum = (n) =>
+  typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
+
+const SPECIES = [
+  {
+    key: "all",
+    common: "All hammerheads (Sphyrna spp.)",
+    scientific: "Sphyrna spp.",
+    status: "Mixed",
+    file: "/data/sphyrna_points.geojson",
+  },
+  {
+    key: "lewini",
+    common: "Scalloped hammerhead",
+    scientific: "Sphyrna lewini",
+    status: "Critically Endangered",
+    file: "/data/scalloped_points.geojson",
+  },
+  {
+    key: "mokarran",
+    common: "Great hammerhead",
+    scientific: "Sphyrna mokarran",
+    status: "Critically Endangered",
+    file: "/data/mokarran_points.geojson",
+  },
+  {
+    key: "zygaena",
+    common: "Smooth hammerhead",
+    scientific: "Sphyrna zygaena",
+    status: "Vulnerable",
+    file: "/data/zygaena_points.geojson",
+  },
+  {
+    key: "tudes",
+    common: "Smalleye hammerhead",
+    scientific: "Sphyrna tudes",
+    status: "Critically Endangered",
+    file: "/data/tudes_points.geojson",
+  },
+  {
+    key: "tiburo",
+    common: "Bonnethead",
+    scientific: "Sphyrna tiburo",
+    status: "Endangered",
+    file: "/data/bonnethead_points.geojson",
+  },
+];
+
+// ---------- util helpers ----------
+function pickNum(x) {
+  const v = Number(x);
+  return Number.isFinite(v) ? v : null;
+}
+function topK(mapCounts, k = 5) {
+  return Object.entries(mapCounts)
+    .filter(([k]) => k && k !== "null" && k !== "undefined")
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, k);
+}
+function describe(arr) {
+  const a = arr.filter((n) => Number.isFinite(n)).sort((x, y) => x - y);
+  if (!a.length) return { n: 0 };
+  const q = (p) => a[Math.min(a.length - 1, Math.floor(p * (a.length - 1)))];
+  return {
+    n: a.length,
+    min: a[0],
+    p50: q(0.5),
+    p90: q(0.9),
+    p95: q(0.95),
+    max: a[a.length - 1],
+  };
 }
 
-/** Hook: recibe lista de "datasets" con {key, label, scientific, status, url}
- *  y rellena counts de forma asíncrona.
- */
-function useCounts(datasets) {
+// calcula métricas a partir de una FeatureCollection
+function summarize(fc) {
+  const feats = fc?.features || [];
+  const byYear = {};
+  const byDataset = {};
+  const byPublisher = {};
+  const byCountry = {};
+  const basis = {};
+
+  const coordUnc = [];
+  const depths = [];
+
+  let hasMedia = 0;
+  let withCoords = 0;
+
+  for (const f of feats) {
+    const p = f.properties || {};
+    const y = Number(p.year ?? new Date(p.eventDate || "").getUTCFullYear());
+    if (Number.isFinite(y)) byYear[y] = (byYear[y] || 0) + 1;
+
+    if (p.datasetName)
+      byDataset[p.datasetName] = (byDataset[p.datasetName] || 0) + 1;
+    if (p.publisher)
+      byPublisher[p.publisher] = (byPublisher[p.publisher] || 0) + 1;
+    if (p.country) byCountry[p.country] = (byCountry[p.country] || 0) + 1;
+    if (p.basisOfRecord)
+      basis[p.basisOfRecord] = (basis[p.basisOfRecord] || 0) + 1;
+
+    const cu = pickNum(p.coordinateUncertaintyInMeters);
+    if (cu != null) coordUnc.push(cu);
+
+    const d1 = pickNum(p.depth);
+    const d2 = pickNum(p.minimumDepthInMeters);
+    const d3 = pickNum(p.maximumDepthInMeters);
+    if (d1 != null) depths.push(d1);
+    if (d2 != null) depths.push(d2);
+    if (d3 != null) depths.push(d3);
+
+    const hasC =
+      Array.isArray(f.geometry?.coordinates) &&
+      Number.isFinite(f.geometry.coordinates[0]) &&
+      Number.isFinite(f.geometry.coordinates[1]);
+    if (hasC) withCoords++;
+
+    if (
+      p.mediaType ||
+      p.hasMedia === true ||
+      (Array.isArray(p.media) && p.media.length)
+    )
+      hasMedia++;
+  }
+
+  const total = feats.length;
+  return {
+    total,
+    withCoordsPct: total ? Math.round((withCoords / total) * 100) : 0,
+    hasMediaPct: total ? Math.round((hasMedia / total) * 100) : 0,
+    years: topK(byYear, 1000), // lo usas para un sparkline si quieres
+    topDatasets: topK(byDataset),
+    topPublishers: topK(byPublisher),
+    topCountries: topK(byCountry),
+    basis: topK(basis),
+    coordUncDesc: describe(coordUnc),
+    depthDesc: describe(depths),
+  };
+}
+
+// ---------- UI ----------
+export default function Data() {
   const [rows, setRows] = useState(
-    datasets.map((d) => ({ ...d, datapoints: null }))
+    SPECIES.map((s) => ({ ...s, datapoints: null, summary: null }))
   );
+  const [loading, setLoading] = useState(true);
+  const [openKey, setOpenKey] = useState(null); // fila abierta
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const next = [];
-      for (const d of datasets) {
-        const c = d.url ? await fetchGeoCount(d.url) : null;
-        next.push({ ...d, datapoints: typeof c === "number" ? c : null });
+    async function load() {
+      setLoading(true);
+      try {
+        const results = await Promise.all(
+          SPECIES.map(async (s) => {
+            try {
+              const r = await fetch(s.file);
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              const j = await r.json();
+              const n = Array.isArray(j.features) ? j.features.length : 0;
+              const summary = summarize(j);
+              return { ...s, datapoints: n, summary };
+            } catch {
+              return { ...s, datapoints: 0, summary: null };
+            }
+          })
+        );
+        if (!cancelled) setRows(results);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) setRows(next);
-    })();
+    }
+    load();
     return () => {
       cancelled = true;
     };
-  }, [datasets]);
+  }, []);
 
-  return rows;
-}
-
-const fmt = (n) =>
-  typeof n === "number" ? new Intl.NumberFormat("en-US").format(n) : "—";
-
-export default function Data() {
-  // 👇 Define aquí tus datasets reales (cambia/añade rutas si quieres)
-  const datasets = useMemo(
-    () => [
-      {
-        key: "lewini",
-        label: "Scalloped hammerhead",
-        scientific: "Sphyrna lewini",
-        status: "Critically Endangered",
-        url: "/data/scalloped_points.geojson", // ✅ ya lo tienes generado desde GBIF
-      },
-      {
-        key: "bonnet",
-        label: "Bonnethead",
-        scientific: "Sphyrna tiburo",
-        status: "Endangered",
-        url: "/data/bonnethead_points.geojson", // si no existe, mostrará "—"
-      },
-      {
-        key: "sphyrna_all",
-        label: "All hammerheads (Sphyrna spp.)",
-        scientific: "Sphyrna spp.",
-        status: "Mixed",
-        url: "/data/sphyrna_points.geojson", // opcional (si más tarde haces uno agregado)
-      },
-    ],
-    []
+  const max = useMemo(
+    () => Math.max(...rows.map((r) => r.datapoints ?? 0), 0),
+    [rows]
   );
-
-  const rows = useCounts(datasets);
-
-  // orden + dirección
-  const [sortBy, setSortBy] = useState("datapoints");
-  const [dir, setDir] = useState("desc");
-
-  const sorted = useMemo(() => {
-    const mult = dir === "asc" ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      if (sortBy === "datapoints") {
-        const av = typeof a.datapoints === "number" ? a.datapoints : -1;
-        const bv = typeof b.datapoints === "number" ? b.datapoints : -1;
-        return (av - bv) * mult;
-      }
-      if (sortBy === "status") return a.status.localeCompare(b.status) * mult;
-      return a.label.localeCompare(b.label) * mult;
-    });
-  }, [rows, sortBy, dir]);
-
-  const max = useMemo(() => {
-    const nums = rows.map((r) =>
-      typeof r.datapoints === "number" ? r.datapoints : 0
-    );
-    return nums.length ? Math.max(...nums) : 0;
-  }, [rows]);
-
-  const Th = (key, label) => (
-    <th
-      onClick={() =>
-        sortBy === key
-          ? setDir((d) => (d === "asc" ? "desc" : "asc"))
-          : setSortBy(key)
-      }
-      style={{ cursor: "pointer", whiteSpace: "nowrap" }}
-      title="Click to sort"
-    >
-      {label} {sortBy === key ? (dir === "asc" ? "↑" : "↓") : ""}
-    </th>
+  const sorted = useMemo(
+    () => [...rows].sort((a, b) => (b.datapoints ?? -1) - (a.datapoints ?? -1)),
+    [rows]
   );
+  const open = rows.find((r) => r.key === openKey);
 
   return (
     <div className="section">
       <Helmet>
-        <title>Sharks from Space – Data</title>
-        <meta
-          name="description"
-          content="Live dataset overview built from real GeoJSON sightings: counts by species and share vs max."
-        />
+        <title>Datasets overview (live)</title>
       </Helmet>
-
       <h2 className="h2">Datasets overview (live)</h2>
 
       <div className="card" style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left" }}>
-              {Th("name", "Species")}
-              {Th("status", "Status")}
-              {Th("datapoints", "Datapoints")}
-              <th>Share</th>
+              <th>Species</th>
+              <th>Status</th>
+              <th>Datapoints ↓ Share</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((r) => {
-              const pct =
-                max && typeof r.datapoints === "number"
-                  ? Math.max(0, r.datapoints / max)
-                  : 0;
+            {sorted.map((s) => {
+              const pct = max ? (s.datapoints ?? 0) / max : 0;
               return (
-                <tr key={r.key} style={{ borderTop: "1px solid #1f2b3a" }}>
+                <tr key={s.key} style={{ borderTop: "1px solid #1f2b3a" }}>
                   <td style={{ padding: "10px 8px" }}>
-                    <strong>{r.label}</strong>
+                    <strong>{s.common}</strong>
                     <div className="muted" style={{ fontSize: 12 }}>
-                      {r.scientific}
+                      {s.scientific}
                     </div>
                   </td>
-                  <td style={{ padding: "10px 8px" }}>{r.status}</td>
-                  <td style={{ padding: "10px 8px" }}>{fmt(r.datapoints)}</td>
-                  <td style={{ padding: "10px 8px", width: 220 }}>
-                    {/* tiny bar (SVG) */}
-                    <svg
-                      width="200"
-                      height="12"
-                      role="img"
-                      aria-label={`${Math.round(pct * 100)}%`}
+                  <td style={{ padding: "10px 8px" }}>{s.status}</td>
+                  <td style={{ padding: "10px 8px" }}>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 10 }}
                     >
-                      <rect
-                        x="0"
-                        y="0"
-                        width="200"
-                        height="12"
-                        fill="#102331"
-                      />
-                      <rect
-                        x="0"
-                        y="0"
-                        width={Math.round(200 * pct)}
-                        height="12"
-                        fill="#32d0ff"
-                      />
-                    </svg>
+                      <span style={{ width: 90, textAlign: "right" }}>
+                        {formatNum(s.datapoints)}
+                      </span>
+                      <svg width="240" height="12">
+                        <rect width="240" height="12" fill="#102331" />
+                        <rect
+                          width={Math.round(240 * pct)}
+                          height="12"
+                          fill="#32d0ff"
+                        />
+                      </svg>
+                    </div>
+                  </td>
+                  <td style={{ padding: "10px 8px" }}>
+                    <button
+                      className="btn"
+                      onClick={() =>
+                        setOpenKey((k) => (k === s.key ? null : s.key))
+                      }
+                    >
+                      Details
+                    </button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        {loading && (
+          <p className="muted" style={{ marginTop: 8 }}>
+            Loading…
+          </p>
+        )}
       </div>
 
+      {open?.summary && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginTop: 0 }}>{open.common} — details</h3>
+          <div className="grid cols-2">
+            <div>
+              <ul style={{ lineHeight: 1.8, margin: 0, paddingLeft: 18 }}>
+                <li>
+                  <strong>Total</strong>: {formatNum(open.summary.total)}
+                </li>
+                <li>
+                  <strong>With coords</strong>: {open.summary.withCoordsPct}%
+                </li>
+                <li>
+                  <strong>With media</strong>: {open.summary.hasMediaPct}%
+                </li>
+                <li>
+                  <strong>Coord. uncertainty (m)</strong>:{" "}
+                  {open.summary.coordUncDesc.n
+                    ? `p50 ${formatNum(
+                        Math.round(open.summary.coordUncDesc.p50)
+                      )}, p95 ${formatNum(
+                        Math.round(open.summary.coordUncDesc.p95)
+                      )}`
+                    : "—"}
+                </li>
+                <li>
+                  <strong>Depth (m)</strong>:{" "}
+                  {open.summary.depthDesc.n
+                    ? `p50 ${formatNum(
+                        Math.round(open.summary.depthDesc.p50)
+                      )}, p95 ${formatNum(
+                        Math.round(open.summary.depthDesc.p95)
+                      )}`
+                    : "—"}
+                </li>
+              </ul>
+            </div>
+            <div>
+              <strong>Top datasets</strong>
+              <ol style={{ marginTop: 6 }}>
+                {open.summary.topDatasets.map(([name, c]) => (
+                  <li key={name}>
+                    {name} — {formatNum(c)}
+                  </li>
+                ))}
+              </ol>
+              <strong>Top publishers</strong>
+              <ol style={{ marginTop: 6 }}>
+                {open.summary.topPublishers.map(([name, c]) => (
+                  <li key={name}>
+                    {name} — {formatNum(c)}
+                  </li>
+                ))}
+              </ol>
+              <strong>Top countries</strong>
+              <ol style={{ marginTop: 6 }}>
+                {open.summary.topCountries.map(([name, c]) => (
+                  <li key={name}>
+                    {name} — {formatNum(c)}
+                  </li>
+                ))}
+              </ol>
+              <strong>Basis of record</strong>
+              <ul style={{ marginTop: 6 }}>
+                {open.summary.basis.map(([name, c]) => (
+                  <li key={name}>
+                    {name}: {formatNum(c)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <button
+            className="btn"
+            style={{ marginTop: 12 }}
+            onClick={() => setOpenKey(null)}
+          >
+            Close
+          </button>
+        </div>
+      )}
+
       <p className="muted" style={{ marginTop: 8 }}>
-        Counts are read directly from your GeoJSON files. Update the files and
-        this page updates automatically.
+        All metrics are computed client-side from your GeoJSON. Añade nuevos
+        archivos a <code>/public/data</code> y extiende la lista arriba.
       </p>
     </div>
   );
