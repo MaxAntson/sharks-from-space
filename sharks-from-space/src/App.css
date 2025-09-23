@@ -1,38 +1,64 @@
+/* ===== Layout base (sticky footer + responsive) ===== */
 :root {
   --bg: #0b0f14;
   --card: #121821;
   --muted: #9fb3c8;
   --acc: #32d0ff;
-}
-
-/* ✅ Layout base para footer pegado abajo */
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  color: #eaf2fb;
+  /* safe areas para móviles con notch */
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * {
   box-sizing: border-box;
 }
+
+/* Fondo global */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #0b0f14;
+  color: #eaf2fb;
+  font-family: system-ui, sans-serif;
+}
+
+/* Contenedor principal */
+.page {
+  flex: 1;
+  max-width: 1200px; /* ancho máximo */
+  margin: 0 auto; /* centra el contenido */
+  padding: 96px 20px 80px; /* arriba | lados | abajo */
+  box-sizing: border-box;
+}
+
+/* Cards, se adaptan */
+.card {
+  background: #111822;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Grids */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.grid.cols-3 {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+/* El footer no debe encogerse */
+footer {
+  flex-shrink: 0;
+}
+
+/* ===== Utilidades existentes ===== */
 a {
   color: var(--acc);
   text-decoration: none;
 }
-
-/* ✅ El main ocupa el espacio disponible */
-.page {
-  flex: 1;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 96px 20px 80px; /* ⬅️ antes tenías 48px; subimos a 80px */
-}
-
 .section {
   margin: 32px 0;
 }
@@ -45,14 +71,6 @@ a {
 .grid {
   display: grid;
   gap: 16px;
-}
-@media (min-width: 900px) {
-  .grid.cols-3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .grid.cols-2 {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 .btn {
   display: inline-flex;
@@ -79,6 +97,31 @@ a {
 .muted {
   color: var(--muted);
 }
+.kpi {
+  font-size: 28px;
+}
+
+/* Imágenes totalmente fluidas y sin desbordes */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ===== Grids responsive ===== */
+@media (min-width: 900px) {
+  .grid.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Hero responsive */
 .hero {
   display: grid;
   gap: 20px;
@@ -94,14 +137,148 @@ a {
   border-radius: 16px;
   border: 1px solid #1f2b3a;
 }
-.badge {
-  font-size: 12px;
-  padding: 4px 8px;
-  background: #102331;
-  border: 1px solid #2a4157;
-  color: #9fd7ff;
-  border-radius: 999px;
+
+/* Evitar scroll horizontal en móviles */
+html,
+body {
+  overflow-x: hidden;
 }
-.kpi {
-  font-size: 28px;
+
+/* Header/Footer padding seguro (notch) */
+header nav > *,
+footer > div {
+  padding-left: max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
+}
+
+/* ===== Blog layout ===== */
+.blog-grid {
+  padding: 5px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/* Smaller, tighter cards */
+.blog-card {
+  padding: 0; /* image touches edges */
+  overflow: hidden;
+}
+
+/* Cover image: fixed, not huge */
+.blog-card__cover {
+  width: 100%;
+  height: 160px; /* ↓ was too tall */
+  object-fit: cover;
+  display: block;
+}
+
+/* Card body: tighter spacing */
+.blog-card__body {
+  padding: 12px 14px;
+}
+
+/* Meta row smaller */
+.blog-card__meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.blog-card__meta .dot {
+  opacity: 0.5;
+}
+
+/* Title smaller + clamped */
+.blog-card__title {
+  padding: 5px;
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+  display: -webkit-box; /* clamp to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Excerpt smaller + clamped */
+.blog-card__body > p {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0 0 10px;
+  color: var(--muted);
+  display: -webkit-box; /* clamp to 3 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer row compact */
+.blog-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tags small pills */
+.tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #102331;
+  border: 1px solid #203244;
+}
+
+/* Make the button smaller here */
+.blog-card .btn {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* ===== Hero adjustments (optional) ===== */
+.blog-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+  overflow: hidden;
+}
+.blog-hero__text {
+  padding: 16px;
+}
+.blog-hero__image {
+  background-image: url("/blog/covers/placeholder.jpg");
+  background-size: cover;
+  background-position: center;
+  min-height: 220px; /* keep it reasonable */
+  border-left: 1px solid #1f2b3a;
+}
+
+/* ===== Responsive tweaks ===== */
+@media (max-width: 900px) {
+  .blog-card__cover {
+    height: 140px;
+  }
+  .blog-hero {
+    grid-template-columns: 1fr;
+  }
+  .blog-hero__image {
+    min-height: 180px;
+    border-left: none;
+    border-top: 1px solid #1f2b3a;
+  }
+}
+
+@media (min-width: 1300px) {
+  /* keep cards from stretching too wide on huge screens */
+  .blog-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    max-width: 1100px;
+    margin: 0 auto;
+  }
 }

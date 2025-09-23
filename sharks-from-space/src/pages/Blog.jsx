@@ -1,62 +1,102 @@
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { POSTS } from "../data/posts";
 
+const fmt = (d) =>
+  new Date(d).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+
+const readingTime = (post) => {
+  const words = (post.content || []).join(" ").split(/\s+/).length;
+  const min = Math.max(1, Math.round(words / 200));
+  return `${min} min read`;
+};
+
 export default function Blog() {
+  const posts = [...POSTS].sort((a, b) => (a.date < b.date ? 1 : -1));
+
   return (
     <div className="section">
       <Helmet>
-        <title>Blog – Sharks from Space</title>
+        <title>Sharks from Space — Stories</title>
         <meta
           name="description"
-          content="Stories about satellite detection, shark species and conservation."
+          content="Stories and research notes: satellites, shark ecology, conservation, and open data."
         />
+        <link rel="canonical" href="https://sharksfrom.space/blog" />
       </Helmet>
-
-      <h2 className="h2">Stories & Updates</h2>
-      <div className="grid cols-3" style={{ gap: 16 }}>
-        {POSTS.map((p) => (
-          <article key={p.slug} className="card" style={{ overflow: "hidden" }}>
-            {p.cover && (
+      <div className="card blog-hero">
+        <div className="blog-hero__text">
+          <div className="badge">Stories • Research • Field Notes</div>
+          <h1 className="h1" style={{ marginTop: 8, marginBottom: 8 }}>
+            Shark Stories from Space
+          </h1>
+          <p className="muted" style={{ maxWidth: 720 }}>
+            Long-form posts with maps, imagery and datasets. Follow how we turn
+            raw satellite signals into species intelligence for conservation.
+          </p>
+        </div>
+        <div
+          style={{
+            backgroundImage: "url(/blog/covers/placeholder.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            borderRadius: "12px",
+            minHeight: "260px",
+            maxHeight: "320px",
+            width: "100%",
+          }}
+          className="blog-hero__image"
+          role="img"
+          aria-label="Ocean from space"
+        />
+      </div>
+      <div className="blog-grid">
+        {posts.map((p) => (
+          <article key={p.slug} className="card blog-card">
+            <Link
+              to={`/blog/${p.slug}`}
+              className="blog-card__coverLink"
+              aria-label={p.title}
+            >
               <img
-                src={p.cover}
+                className="blog-card__cover"
+                src={p.cover || "/blog/covers/placeholder.jpg"}
                 alt={p.title}
-                style={{ width: "100%", height: 160, objectFit: "cover" }}
+                loading="lazy"
               />
-            )}
-            <div style={{ paddingTop: 8 }}>
-              <h3 style={{ margin: "6px 0" }}>
-                <Link
-                  to={`/blog/${p.slug}`}
-                  style={{ textDecoration: "none", color: "#eaf2fb" }}
-                >
-                  {p.title}
-                </Link>
-              </h3>
-              <div className="muted" style={{ fontSize: 12 }}>
-                {new Date(p.date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                })}{" "}
-                · {p.author}
+            </Link>
+
+            <div className="blog-card__body">
+              <div className="blog-card__meta">
+                <span className="muted">{fmt(p.date)}</span>
+                <span className="dot" aria-hidden>
+                  •
+                </span>
+                <span className="muted">{readingTime(p)}</span>
               </div>
-              <p className="muted" style={{ marginTop: 8 }}>
-                {p.excerpt}
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  marginTop: 8,
-                }}
-              >
-                {p.tags?.map((t) => (
-                  <span key={t} className="badge">
-                    {t}
-                  </span>
-                ))}
+
+              <h3 className="blog-card__title">
+                <Link to={`/blog/${p.slug}`}>{p.title}</Link>
+              </h3>
+
+              <p className="muted">{p.excerpt}</p>
+
+              <div className="blog-card__footer">
+                <div className="tags">
+                  {(p.tags || []).map((t) => (
+                    <span key={t} className="tag">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <Link to={`/blog/${p.slug}`} className="btn">
+                  Read more →
+                </Link>
               </div>
             </div>
           </article>
