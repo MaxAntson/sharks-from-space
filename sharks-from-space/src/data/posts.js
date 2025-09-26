@@ -1,5 +1,98 @@
 export const POSTS = [
   {
+    slug: "tracking-sharks-worldwide",
+    title: "🌍 Tracking Sharks Worldwide: What the Data Reveals",
+    date: "2025-09-26",
+    author: "Sharks from Space Team",
+    tags: ["occurrences", "global", "gbif"],
+    cover: "/blog/covers/post1.jpeg",
+    excerpt:
+      "From hammerheads to whale sharks — how open data platforms like GBIF and SharkBase reveal shark hotspots around the globe.",
+    content: [
+      "Did you know there are **over 200,000 shark occurrence records** available worldwide?",
+      "Platforms like [GBIF SharkBase](https://www.gbif.org/dataset/14f3bfe0) collect sightings from research expeditions, fisheries, and even citizen science projects.",
+      "## Why it matters",
+      "These records help us map hotspots where sharks are most frequently observed — from the Caribbean to the Indian Ocean.",
+      "By comparing occurrences across time (2000–2025), we can see how climate change and fishing pressure shift where sharks live.",
+      "The more people share data, the better we understand shark migrations and threats.",
+    ],
+  },
+  {
+    slug: "hammerheads-on-the-move",
+    title: "🦈 Hammerheads on the Move: What 28,500 Records Tell Us",
+    date: "2025-09-20",
+    author: "Marine Data Lab",
+    tags: ["species", "hammerhead", "gbif"],
+    cover: "/blog/covers/post2.jpeg",
+    excerpt:
+      "Scalloped hammerheads are critically endangered — but global data shows where they still roam and gather.",
+    content: [
+      "Scalloped hammerheads (*Sphyrna lewini*) are iconic sharks with a unique head shape. Sadly, they are **critically endangered**.",
+      "According to [GBIF’s dataset](https://www.gbif.org/species/5219316), there are around **28,500 recorded sightings**.",
+      "## Where do they go?",
+      "- Warm tropical and subtropical waters.",
+      "- Hotspots include the Gulf of Mexico, Western Africa, and parts of the Indo-Pacific.",
+      "## Why is this important?",
+      "By knowing where hammerheads gather, scientists and governments can propose **marine protected areas** and regulate fishing to give these sharks a chance to recover.",
+    ],
+  },
+  {
+    slug: "ocearch-live-tracker",
+    title: "📡 OCEARCH: Meet Sharks You Can Track in Real-Time",
+    date: "2025-09-10",
+    author: "Sharks from Space Team",
+    tags: ["tracking", "ocearch", "species"],
+    cover: "/blog/covers/post3.jpeg",
+    excerpt:
+      "Ever wanted to follow a shark’s journey? OCEARCH makes it possible with GPS-tagged great whites, tigers, and more.",
+    content: [
+      "Sharks are no longer invisible. Thanks to the [OCEARCH Tracker](https://www.ocearch.org/tracker/), you can follow tagged great whites, tiger sharks, and hammerheads as they roam the oceans.",
+      "Each shark has a **name and personality** — from ‘Mary Lee’ the great white to ‘Apex’ the tiger shark.",
+      "## Why is it cool?",
+      "- You can see when a shark last pinged a satellite.",
+      "- Track epic migrations across thousands of kilometers.",
+      "- Learn how tagging helps conservation by revealing critical nursery and feeding grounds.",
+      "It’s like social media — but for sharks!",
+    ],
+  },
+  {
+    slug: "ocean-health-signals",
+    title: "🌡️ Ocean Health Signals: Sharks, Temperature & Plankton",
+    date: "2025-09-14",
+    author: "Copernicus Marine Insights",
+    tags: ["sst", "climate", "plankton"],
+    cover: "/blog/covers/post5.jpeg",
+    excerpt:
+      "Why ocean temperature and plankton blooms (chlorophyll) are key to where sharks appear.",
+    content: [
+      "Sharks don’t swim randomly — they follow **temperature and food**.",
+      "Data from [Copernicus Marine](https://marine.copernicus.eu/) shows how changes in **sea surface temperature (SST)** and **plankton blooms** guide migrations.",
+      "## Why it matters",
+      "- Warmer waters push species like hammerheads closer to poles.",
+      "- Plankton-rich areas attract fish, which attract sharks.",
+      "By combining shark sightings with SST and chlorophyll data, we can predict future shifts under climate change.",
+    ],
+  },
+  {
+    slug: "human-footprint-at-sea",
+    title: "🚢 Human Footprint at Sea: Where Fishing Meets Sharks",
+    date: "2025-09-08",
+    author: "Global Fishing Watch",
+    tags: ["fishing", "AIS", "conservation"],
+    cover: "/blog/covers/post4.jpeg",
+    excerpt:
+      "Sharks face their greatest threat not from nature, but from us. Here’s how fishing activity overlaps with shark hotspots.",
+    content: [
+      "Thanks to [Global Fishing Watch](https://globalfishingwatch.org/), we can see where industrial fishing vessels operate — often the same waters sharks need most.",
+      "## The overlap",
+      "- Shark hotspots overlap with **heavy trawling and longline fishing zones**.",
+      "- In some areas, **fishing intensity doubled** between 2010–2020.",
+      "## Why care?",
+      "When fishing fleets overlap with shark nursery grounds, populations collapse fast.",
+      "By combining fishing data with shark sightings, we can argue for **time-area closures** and **protected corridors**.",
+    ],
+  },
+  {
     slug: "cleaning-gbif-like-a-pro",
     title: "Cleaning GBIF Like a Pro: From Raw Points to a Trustworthy Map",
     date: "2025-09-06",
@@ -130,6 +223,45 @@ export const POSTS = [
       "- Time-area restrictions during aggregations.",
       "- Public reporting with basic metadata (time, GPS, number of individuals).",
       "These small measures improve data quality and reduce harm—win-win for science and sharks.",
+    ],
+  },
+  {
+    slug: "endangered-hammerheads-australia",
+    title: "Endangered Hammerheads in Australia: New Sites, New Threats",
+    date: "2024-05-06",
+    author: "Peter de Kruijff (ABC Science, adapted)",
+    tags: ["species", "habitat", "conservation", "policy", "climate-change"],
+    cover: "/blog/covers/hammerhead4.webp",
+    excerpt:
+      "Scientists have recorded new sites where critically endangered scalloped hammerheads are aggregating. Human interactions are increasing — but protections remain uncertain.",
+    content: [
+      "## A growing concern",
+      "Scalloped hammerhead sharks (*Sphyrna lewini*), named for the notches along their distinct head, are **critically endangered**. Despite their global decline, much about their behaviour remains mysterious.",
+
+      "In recent years, **large schools** have been recorded more often — notably on Queensland’s Gold Coast and near Perth, Western Australia. Drone surveys and field observations confirm these aggregations can include **pups only weeks old**.",
+
+      "## Human interactions",
+      "The accessible location of these gatherings has led to swimmers, divers, and anglers approaching the sharks. Ecologists warn that:",
+      "- Handling or chasing pups can cause lethal stress.",
+      "- Driving sharks out of sheltered bays exposes them to predators like bull sharks.",
+      "- Even catch-and-release fishing often results in hammerhead mortality.",
+
+      "## Calls for a code of conduct",
+      "Marine scientists including Olaf Meynecke and Naima Andrea López have called for **human interaction codes**, similar to those for dolphins, whales and whale sharks. Suggested measures include:",
+      "- Minimum approach distances for vessels and swimmers.",
+      "- Seasonal fishing bans at aggregation sites (e.g. Burleigh Heads).",
+      "- New **sanctuary zones** where hammerheads repeatedly gather.",
+
+      "## Policy gaps",
+      "Despite discussions in Western Australia, neither state nor federal governments have moved to implement a scalloped hammerhead code of conduct. Current conservation management is mostly limited to state fishing bans (e.g. WA’s beach ban, Queensland’s phase-out of gillnets).",
+
+      "## Bigger picture",
+      "Commercial fishing remains the biggest global threat, but **climate change** may also be shifting hammerhead behaviour. Warmer oceans may explain why Burleigh and Perth are becoming important habitats for both food and shelter.",
+
+      "## Why it matters",
+      "Estimated declines of **50–80%** between 1950 and 2021 underline the urgency. Tagging projects are now underway to better understand juvenile habitats and inform protection strategies.",
+
+      "Protecting hammerheads will require **cross-border coordination**, combining satellite monitoring, local science, and public education to balance conservation with human activity.",
     ],
   },
 ];

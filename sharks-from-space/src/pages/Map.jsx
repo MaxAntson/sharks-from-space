@@ -224,10 +224,10 @@ export default function Map() {
         <LegendDot color={COLORS.tiburo} label="S. tiburo (Bonnethead)" />
       </div>
 
-      <p className="muted" style={{ marginTop: 4 }}>
+      {/* <p className="muted" style={{ marginTop: 4 }}>
         Points falling on land are filtered out using a global land mask
         (GeoJSON) and Turf. Data: GBIF (2000–2025), genus <em>Sphyrna</em>.
-      </p>
+      </p> */}
     </div>
   );
 }
