@@ -132,4 +132,43 @@ export const POSTS = [
       "These small measures improve data quality and reduce harm—win-win for science and sharks.",
     ],
   },
+  {
+    slug: "endangered-hammerheads-australia",
+    title: "Endangered Hammerheads in Australia: New Sites, New Threats",
+    date: "2024-05-06",
+    author: "Peter de Kruijff (ABC Science, adapted)",
+    tags: ["species", "habitat", "conservation", "policy", "climate-change"],
+    cover: "/blog/covers/hammerhead4.webp",
+    excerpt:
+      "Scientists have recorded new sites where critically endangered scalloped hammerheads are aggregating. Human interactions are increasing — but protections remain uncertain.",
+    content: [
+      "## A growing concern",
+      "Scalloped hammerhead sharks (*Sphyrna lewini*), named for the notches along their distinct head, are **critically endangered**. Despite their global decline, much about their behaviour remains mysterious.",
+
+      "In recent years, **large schools** have been recorded more often — notably on Queensland’s Gold Coast and near Perth, Western Australia. Drone surveys and field observations confirm these aggregations can include **pups only weeks old**.",
+
+      "## Human interactions",
+      "The accessible location of these gatherings has led to swimmers, divers, and anglers approaching the sharks. Ecologists warn that:",
+      "- Handling or chasing pups can cause lethal stress.",
+      "- Driving sharks out of sheltered bays exposes them to predators like bull sharks.",
+      "- Even catch-and-release fishing often results in hammerhead mortality.",
+
+      "## Calls for a code of conduct",
+      "Marine scientists including Olaf Meynecke and Naima Andrea López have called for **human interaction codes**, similar to those for dolphins, whales and whale sharks. Suggested measures include:",
+      "- Minimum approach distances for vessels and swimmers.",
+      "- Seasonal fishing bans at aggregation sites (e.g. Burleigh Heads).",
+      "- New **sanctuary zones** where hammerheads repeatedly gather.",
+
+      "## Policy gaps",
+      "Despite discussions in Western Australia, neither state nor federal governments have moved to implement a scalloped hammerhead code of conduct. Current conservation management is mostly limited to state fishing bans (e.g. WA’s beach ban, Queensland’s phase-out of gillnets).",
+
+      "## Bigger picture",
+      "Commercial fishing remains the biggest global threat, but **climate change** may also be shifting hammerhead behaviour. Warmer oceans may explain why Burleigh and Perth are becoming important habitats for both food and shelter.",
+
+      "## Why it matters",
+      "Estimated declines of **50–80%** between 1950 and 2021 underline the urgency. Tagging projects are now underway to better understand juvenile habitats and inform protection strategies.",
+
+      "Protecting hammerheads will require **cross-border coordination**, combining satellite monitoring, local science, and public education to balance conservation with human activity.",
+    ],
+  },
 ];
