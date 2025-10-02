@@ -1,4 +1,3 @@
-/* global L */
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
@@ -82,7 +81,7 @@ const pointToLayer = (feature, latlng) =>
     weight: 0.8,
   });
 
-const onEachFeature = (feature, layer) => {
+const popupHtml = (feature) => {
   const species =
     feature?.properties?.species ||
     feature?.properties?.scientificName ||
@@ -90,44 +89,38 @@ const onEachFeature = (feature, layer) => {
   const [lng, lat] = feature?.geometry?.coordinates || [];
   const src =
     feature?.properties?.datasetName || feature?.properties?.publisher || "";
-  layer.bindPopup(
-    `<strong>${species}</strong><br/>lat: ${lat?.toFixed(
-      3
-    )}, lng: ${lng?.toFixed(3)}${
-      src ? `<br/><span class="muted">${src}</span>` : ""
-    }`
-  );
+  const sst = feature?.properties?.sst_c;
+  const dist = feature?.properties?.dist_coast_km;
+
+  return `<strong>${species}</strong><br/>
+          lat: ${lat?.toFixed(3)}, lng: ${lng?.toFixed(3)}
+          ${sst != null ? `<br/>SST: ${Number(sst).toFixed(2)} °C` : ""}
+          ${
+            dist != null
+              ? `<br/>Dist. costa: ${Number(dist).toFixed(2)} km`
+              : ""
+          }
+          ${src ? `<br/><span class="muted">${src}</span>` : ""}`;
 };
 
-// ============ componentes que SÍ usan contexto de leaflet ============
-// Deben renderizarse DENTRO de <MapContainer>
-function FitToData({ featureCollection }) {
+const onEachFeature = (feature, layer) => {
+  layer.bindPopup(popupHtml(feature));
+};
+
+// --- NUEVO: arrancar centrado en Caribe/Florida ---
+function StartInCaribbean() {
   const map = useMap();
   useEffect(() => {
-    if (!featureCollection || !featureCollection.features?.length) return;
-    const coords = featureCollection.features
-      .map((f) => f.geometry?.coordinates)
-      .filter(Boolean);
-    const pts = [];
-    const push = (lng, lat) => {
-      if (Number.isFinite(lng) && Number.isFinite(lat)) pts.push([lat, lng]);
-    };
-    for (const c of coords) {
-      if (Array.isArray(c[0]) && Array.isArray(c[0][0])) {
-        for (const p of c) push(p[0], p[1]);
-      } else {
-        push(c[0], c[1]);
-      }
-    }
-    if (!pts.length) return;
-    const lats = pts.map((p) => p[0]);
-    const lngs = pts.map((p) => p[1]);
-    const bounds = [
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)],
-    ];
-    map.fitBounds(bounds, { padding: [20, 20] });
-  }, [featureCollection, map]);
+    // Opción simple: centro + zoom
+    map.setView([25, -80], 5);
+
+    // Opción alternativa con bounds (descomenta si prefieres):
+    // const bounds = [
+    //   [8, -98],   // sudoeste (lat, lon)
+    //   [34, -60],  // nordeste
+    // ];
+    // map.fitBounds(bounds, { padding: [20, 20] });
+  }, [map]);
   return null;
 }
 
@@ -144,10 +137,12 @@ function LegendDot({ color, label }) {
 }
 
 export default function Map() {
-  const hammerheads = useGeoJson("/data/sphyrna_points.geojson");
+  // ✅ usa el archivo con SST + distancia (y forzamos recarga con ?v=8)
+  const hammerheads = useGeoJson(
+    "/data/sphyrna_points_enriched_0_5000_with_dist.geojson?v=10"
+  );
   const land = useGeoJson("/data/land.geojson");
 
-  // preparar datos filtrados (sin usar hooks de leaflet)
   const filteredAll = useMemo(
     () =>
       hammerheads.data && land.data
@@ -173,9 +168,9 @@ export default function Map() {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <MapContainer
-          center={[10, -80]}
-          zoom={3}
-          scrollWheelZoom={true}
+          center={[25, -80]} // se ignora porque usamos StartInCaribbean
+          zoom={5} // idem
+          scrollWheelZoom
           style={{ height: 520, width: "100%" }}
         >
           <TileLayer
@@ -183,8 +178,11 @@ export default function Map() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* ✅ Este componente usa useMap y por eso va DENTRO */}
-          {filteredAll && <FitToData featureCollection={filteredAll} />}
+          {/* 👇 centra al Caribe al montar */}
+          <StartInCaribbean />
+
+          {/* Si prefieres que ajuste a todos los puntos, quita StartInCaribbean y deja esto */}
+          {/* {filteredAll && <FitToData featureCollection={filteredAll} />} */}
 
           <LayersControl position="topright">
             <LayersControl.Overlay checked name="Hammerheads (GBIF)">
@@ -223,11 +221,7 @@ export default function Map() {
         <LegendDot color={COLORS.zygaena} label="S. zygaena (Smooth)" />
         <LegendDot color={COLORS.tiburo} label="S. tiburo (Bonnethead)" />
       </div>
-
-      {/* <p className="muted" style={{ marginTop: 4 }}>
-        Points falling on land are filtered out using a global land mask
-        (GeoJSON) and Turf. Data: GBIF (2000–2025), genus <em>Sphyrna</em>.
-      </p> */}
     </div>
   );
 }
+// =============================== FIN ===============================
