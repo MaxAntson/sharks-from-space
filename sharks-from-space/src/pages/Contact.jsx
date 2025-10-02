@@ -21,6 +21,13 @@ export default function Contact() {
       linkedin: null,
       initials: "K",
     },
+    {
+      name: "Carlos L",
+      role: "Hardware Engineer",
+      email: "carlosleon@gapp.nthu.edu.tw",
+      linkedin: null,
+      initials: "CL",
+    },
   ];
 
   return (
