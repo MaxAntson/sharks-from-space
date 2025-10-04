@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@dr.pogodin/react-helmet";
 import { POSTS } from "../data/posts";
 
 export default function BlogPost() {

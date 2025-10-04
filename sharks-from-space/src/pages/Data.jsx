@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@dr.pogodin/react-helmet";
 
 // ---------- utils ----------
 const fmt = (n) =>

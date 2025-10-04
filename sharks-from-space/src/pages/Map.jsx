@@ -8,7 +8,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { useEffect, useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@dr.pogodin/react-helmet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 
