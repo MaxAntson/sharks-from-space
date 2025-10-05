@@ -11,16 +11,15 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import PostDetail from "./pages/PostDetail";
-// import BlogPost from "./pages/BlogPost"; // ❌ o define otra ruta distinta si lo necesitas
 import Research from "./pages/Research";
 import Sources from "./pages/Sources";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Presentation from "./pages/Presentation";
 import "./App.css";
 
 export default function App() {
   return (
     <BrowserRouter>
-      {/* ✅ Default Helmet (used if a page doesn’t override it) */}
       <Helmet>
         <title>Sharks from Space 🌍</title>
         <meta
@@ -33,6 +32,7 @@ export default function App() {
       <main className="page">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/presentation" element={<Presentation />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<PostDetail />} />
           <Route path="/species" element={<Species />} />
