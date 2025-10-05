@@ -3,7 +3,6 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  # - earthaccess==0.14.0
   - gdown==5.2.0
   - geopandas==1.0.1
   - h5netcdf==1.6.4
